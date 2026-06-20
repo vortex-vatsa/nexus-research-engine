@@ -9,7 +9,7 @@
 ---
 
 ### Task 1.1 — Project Skeleton
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): project skeleton and folder structure`
 
 #### Must Implement
