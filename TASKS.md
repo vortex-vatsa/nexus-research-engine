@@ -642,7 +642,7 @@ print('slugify OK')
 ---
 
 ### Task 1.8 — WorkspaceRepository
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): WorkspaceRepository — all file operations abstracted`
 
 #### Must Implement
