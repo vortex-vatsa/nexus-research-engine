@@ -150,7 +150,7 @@ print('MISSING:', missing) if missing else print('All files present')
 ---
 
 ### Task 1.2 — Core Schemas
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): core Pydantic V2 schemas — all 16 models`
 
 #### Must Implement
