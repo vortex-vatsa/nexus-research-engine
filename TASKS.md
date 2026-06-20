@@ -325,7 +325,7 @@ for cls in [OllamaProvider, GeminiProvider, GroqProvider]:
 ---
 
 ### Task 1.4 — Search Client and Researcher Agent
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): Tavily search client and researcher agent`
 
 #### Must Implement
