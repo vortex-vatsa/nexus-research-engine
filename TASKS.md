@@ -827,7 +827,7 @@ print('email_to_slug OK')
 ---
 
 ### Task 1.10 — All API Routes Protected
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): all routes protected, notebook router complete`
 
 #### Must Implement
