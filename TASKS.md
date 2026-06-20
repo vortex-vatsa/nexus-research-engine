@@ -399,7 +399,7 @@ asyncio.run(test())
 ---
 
 ### Task 1.5 — Synthesizer Agent
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): synthesizer agent with JSON repair retry logic`
 
 #### Must Implement
