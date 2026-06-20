@@ -456,7 +456,7 @@ for m in ['run','_build_synthesis_prompt','_parse_llm_response','_attempt_json_r
 ---
 
 ### Task 1.6 — Vector Store and Notebook Service
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): ChromaDB vector store with workspace isolation and notebook RAG`
 
 #### Must Implement
