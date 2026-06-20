@@ -121,7 +121,7 @@ class GeminiProvider(BaseLLMProvider):
             settings: Application settings
         """
         self.settings = settings
-        self.model = "gemini-1.5-flash"
+        self.model = "gemini-2.5-flash"
 
     async def complete(
         self, system_prompt: str, user_prompt: str, max_tokens: int = 4096
@@ -271,7 +271,7 @@ class LLMRouter:
         )
 
     async def complete(
-        self, system: str, user: str, max_tokens: int = 4096
+        self, system_prompt: str, user_prompt: str, max_tokens: int = 4096
     ) -> str:
         """Generate completion with selected provider.
 
@@ -279,8 +279,8 @@ class LLMRouter:
         exponential backoff retry logic.
 
         Args:
-            system: System prompt
-            user: User message
+            system_prompt: System prompt
+            user_prompt: User message
             max_tokens: Maximum tokens to generate
 
         Returns:
@@ -296,9 +296,9 @@ class LLMRouter:
             )
 
         async def _call():
-            async with asyncio.timeout(30):
+            async with asyncio.timeout(90):
                 return await self._provider.complete(
-                    system, user, max_tokens
+                    system_prompt, user_prompt, max_tokens
                 )
 
         try:

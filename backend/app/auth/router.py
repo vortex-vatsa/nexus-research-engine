@@ -3,7 +3,7 @@
 import logging
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
@@ -150,7 +150,7 @@ async def get_me(request: Request):
     user_data = request.session.get("user")
 
     if not user_data:
-        return {"error": "Not authenticated"}, 401
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
         user = AuthUser(**user_data)
@@ -158,7 +158,7 @@ async def get_me(request: Request):
     except Exception as e:
         logger.error(f"Failed to parse user session: {e}")
         request.session.clear()
-        return {"error": "Invalid user session"}, 401
+        raise HTTPException(status_code=401, detail="Invalid user session")
 
 
 async def _upsert_user(

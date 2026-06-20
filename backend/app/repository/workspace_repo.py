@@ -44,10 +44,22 @@ class WorkspaceRepository:
         Raises:
             WorkspaceNotFoundError: If path traversal detected
         """
+        # Reject slug/email containing path separators or traversal sequences
+        if "/" in slug or "\\" in slug or ".." in slug:
+            raise WorkspaceNotFoundError(
+                "Path traversal attempt detected",
+                context={"email_slug": email_slug, "slug": slug},
+            )
+        if "/" in email_slug or "\\" in email_slug or ".." in email_slug:
+            raise WorkspaceNotFoundError(
+                "Path traversal attempt detected",
+                context={"email_slug": email_slug, "slug": slug},
+            )
+
         base = self.storage_root
         path = (base / email_slug / slug).resolve()
 
-        # Verify path is within storage root
+        # Verify path is within storage root (defense in depth)
         if not str(path).startswith(str(base)):
             raise WorkspaceNotFoundError(
                 "Path traversal attempt detected",

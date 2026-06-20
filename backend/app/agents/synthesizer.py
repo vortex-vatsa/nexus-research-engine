@@ -78,6 +78,10 @@ class SynthesizerAgent:
             f"[{self.request_id}] Starting synthesis of {len(sources)} sources"
         )
 
+        # Cap to top 10 sources by snippet length to prevent context overflow and timeouts
+        sources = sorted(sources, key=lambda s: len(s.snippet), reverse=True)[:10]
+        logger.info(f"[{self.request_id}] Capped to {len(sources)} top sources by relevance")
+
         # Step 1: Build context from sources
         context_lines = []
         for source in sources:
@@ -298,14 +302,14 @@ class SynthesizerAgent:
                 ],
                 document_library=[
                     DocumentSource(
-                        id=doc.get("id", ""),
-                        title=doc.get("title", ""),
-                        url=doc.get("url", ""),
-                        local_path=doc.get("local_path", ""),
-                        snippet=doc.get("snippet", ""),
+                        id=doc.get("id") or "",
+                        title=doc.get("title") or "",
+                        url=doc.get("url") or "",
+                        local_path=doc.get("local_path") or "",
+                        snippet=doc.get("snippet") or "",
                         downloaded_images=doc.get(
-                            "downloaded_images", []
-                        ),
+                            "downloaded_images"
+                        ) or [],
                     )
                     for doc in parsed.get("document_library", [])
                 ],

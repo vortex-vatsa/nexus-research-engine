@@ -8,9 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse
 
+from app.auth.router import router as auth_router
 from app.core.config import get_settings
 from app.core.exceptions import NexusBaseError
-
+from app.routers import notebook, research, workspaces
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -20,12 +21,14 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Startup and shutdown event handler."""
     # Startup
-    settings = get_settings()
     logger.info("Starting Nexus Research Engine...")
 
     # Initialize LLM router on startup
     from app.providers.llm_router import llm_router
-    await llm_router.initialize()
+    try:
+        await llm_router.initialize()
+    except RuntimeError as e:
+        logger.warning(f"LLM initialization failed: {e}")
 
     # Database initialization and job healing will be added in Task 1.7
 
@@ -87,10 +90,8 @@ def create_app() -> FastAPI:
             },
         )
 
-    # Mount routers (stubs for now, will be implemented in later tasks)
-    from app.routers import auth, research, workspaces, notebook
-
-    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    # Mount routers
+    app.include_router(auth_router, prefix="/auth", tags=["auth"])
     app.include_router(research.router, prefix="/research", tags=["research"])
     app.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"])
     app.include_router(notebook.router, prefix="/notebook", tags=["notebook"])
