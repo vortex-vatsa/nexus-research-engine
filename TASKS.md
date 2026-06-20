@@ -730,7 +730,7 @@ print('WorkspaceRepository fully implemented')
 ---
 
 ### Task 1.9 — Google OAuth
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): Google OAuth with session middleware and email allowlist`
 
 #### Must Implement
