@@ -229,7 +229,7 @@ pytest tests/test_schemas.py -v
 ---
 
 ### Task 1.3 — Config and LLM Router
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): config settings and LLM context router`
 
 #### Must Implement
