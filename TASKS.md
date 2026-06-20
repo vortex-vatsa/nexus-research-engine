@@ -515,7 +515,7 @@ print(f'Chunking OK: {len(chunks)} chunks')
 ---
 
 ### Task 1.7 — SQLite Database + Job Persistence + Orchestrator
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(backend): SQLite persistence, job registry, and orchestrator`
 
 #### Must Implement
