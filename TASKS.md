@@ -1123,7 +1123,7 @@ grep -c "export interface\|export enum" src/lib/types.ts
 ---
 
 ### Task 2.2 — App Shell, Sidebar, Login Page
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(frontend): app shell, sidebar, login page, design system`
 
 #### Must Implement
