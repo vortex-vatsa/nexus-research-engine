@@ -2,7 +2,7 @@
 
 import { SessionProvider } from "next-auth/react"
 import { useState } from "react"
-import { AppShell } from "@/components/layout/AppShell"
+import { ProtectedLayout } from "./protected-layout"
 
 interface LayoutClientProps {
   children: React.ReactNode
@@ -13,12 +13,12 @@ export function LayoutClient({ children }: LayoutClientProps) {
 
   return (
     <SessionProvider>
-      <AppShell
+      <ProtectedLayout
         showNotebook={showNotebook}
         onToggleNotebook={() => setShowNotebook(!showNotebook)}
       >
         {children}
-      </AppShell>
+      </ProtectedLayout>
     </SessionProvider>
   )
 }
