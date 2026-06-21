@@ -6,10 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  })
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
 }
 
 export function getDomain(url: string): string {
