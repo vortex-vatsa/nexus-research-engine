@@ -1,9 +1,13 @@
 """Google OAuth routes: login, callback, logout, me."""
 
 import logging
+from datetime import datetime, timedelta
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 
@@ -11,6 +15,7 @@ from app.core.config import get_allowed_emails, get_settings
 from app.core.exceptions import AuthError
 from app.core.schemas import AuthUser
 from app.models.db_models import User
+from app.services.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +164,73 @@ async def get_me(request: Request):
         logger.error(f"Failed to parse user session: {e}")
         request.session.clear()
         raise HTTPException(status_code=401, detail="Invalid user session")
+
+
+@router.post("/token")
+async def exchange_token(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    """Exchange Google ID token for Nexus JWT token.
+
+    Frontend sends Google ID token, backend verifies it with Google,
+    checks email allowlist, and returns signed JWT for API access.
+
+    Args:
+        body: Request body with google_id_token
+        db: Database session
+
+    Returns:
+        JSON with access_token and token_type
+    """
+    try:
+        # Verify Google ID token
+        id_info = id_token.verify_oauth2_token(
+            body.get("google_id_token"),
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+        )
+    except ValueError as e:
+        logger.error(f"Invalid Google token: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid Google token: {e}")
+
+    email = id_info.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="No email in Google token")
+
+    # Check email is allowed
+    allowed_emails = get_allowed_emails(settings)
+    if email not in allowed_emails:
+        logger.warning(f"Access denied for email: {email}")
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Create or update user in database
+    try:
+        google_id = id_info.get("sub")
+        name = id_info.get("name", "")
+        avatar_url = id_info.get("picture", "")
+
+        user = await _upsert_user(db, google_id, email, name, avatar_url)
+    except Exception as e:
+        logger.error(f"Failed to upsert user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create/update user")
+
+    # Generate Nexus JWT token
+    nexus_jwt = jwt.encode(
+        {
+            "sub": email,
+            "name": user.name,
+            "avatar_url": user.avatar_url,
+            "google_id": user.google_id,
+            "exp": datetime.utcnow() + timedelta(days=7),
+        },
+        settings.SESSION_SECRET_KEY,
+        algorithm="HS256",
+    )
+
+    logger.info(f"Token issued for user: {email}")
+
+    return {"access_token": nexus_jwt, "token_type": "bearer"}
 
 
 async def _upsert_user(

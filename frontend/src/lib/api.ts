@@ -20,15 +20,18 @@ export class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  token?: string,
+  nexusToken: string,
   init?: RequestInit
 ): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+  if (nexusToken) {
+    headers["Authorization"] = `Bearer ${nexusToken}`
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers,
     ...init,
   })
 
@@ -37,27 +40,27 @@ async function request<T>(
   return res.json() as Promise<T>
 }
 
-export const createApi = (token: string) => ({
+export const createApi = (nexusToken: string) => ({
   runResearch: (body: ResearchRequest) =>
-    request<{ job_id: string }>("/research/run", token, {
+    request<{ job_id: string }>("/research/run", nexusToken, {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
   getJobStatus: (jobId: string) =>
-    request<ResearchJobStatus>(`/research/status/${jobId}`, token),
+    request<ResearchJobStatus>(`/research/status/${jobId}`, nexusToken),
 
   listWorkspaces: () =>
-    request<WorkspaceListItem[]>("/workspaces", token),
+    request<WorkspaceListItem[]>("/workspaces", nexusToken),
 
   getWorkspace: (slug: string) =>
-    request<DashboardPayload>(`/workspaces/${slug}`, token),
+    request<DashboardPayload>(`/workspaces/${slug}`, nexusToken),
 
   deleteWorkspace: (slug: string) =>
-    request<void>(`/workspaces/${slug}`, token, { method: "DELETE" }),
+    request<void>(`/workspaces/${slug}`, nexusToken, { method: "DELETE" }),
 
   queryNotebook: (body: NotebookQuery) =>
-    request<NotebookResponse>("/notebook/query", token, {
+    request<NotebookResponse>("/notebook/query", nexusToken, {
       method: "POST",
       body: JSON.stringify(body),
     }),

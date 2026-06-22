@@ -31,11 +31,11 @@ export function BlueprintForm() {
 
   // Poll for job status
   useEffect(() => {
-    if (phase !== "running" || !jobId || !session?.accessToken) return
+    if (phase !== "running" || !jobId || !session?.nexusToken) return
 
     const pollInterval = setInterval(async () => {
       try {
-        const api = createApi(session.accessToken!)
+        const api = createApi(session.nexusToken!)
         const status = await api.getJobStatus(jobId)
 
         setProgressMsg(status.progress_message)
@@ -56,7 +56,7 @@ export function BlueprintForm() {
     }, 2000)
 
     return () => clearInterval(pollInterval)
-  }, [phase, jobId, session?.accessToken, router])
+  }, [phase, jobId, session?.nexusToken, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +67,7 @@ export function BlueprintForm() {
       return
     }
 
-    if (!session?.accessToken) {
+    if (!session?.nexusToken) {
       setErrorMsg("Not authenticated")
       return
     }
@@ -77,7 +77,7 @@ export function BlueprintForm() {
       setPhase("running")
       setProgressMsg("Starting research...")
 
-      const api = createApi(session.accessToken)
+      const api = createApi(session.nexusToken)
       const result = await api.runResearch({
         topic: topic.trim(),
         extensiveness,

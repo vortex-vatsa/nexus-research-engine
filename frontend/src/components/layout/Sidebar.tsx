@@ -15,15 +15,15 @@ export function Sidebar() {
   const { workspaces, activeSlug, fetchWorkspaces, removeWorkspace } = useWorkspaceStore()
 
   useEffect(() => {
-    if (session?.accessToken) {
-      fetchWorkspaces(session.accessToken).finally(() => setIsLoading(false))
+    if (session?.nexusToken) {
+      fetchWorkspaces(session.nexusToken).finally(() => setIsLoading(false))
     }
-  }, [session?.accessToken, fetchWorkspaces])
+  }, [session?.nexusToken, fetchWorkspaces])
 
   const handleDelete = async (slug: string) => {
-    if (!session?.accessToken) return
+    if (!session?.nexusToken) return
     try {
-      const api = createApi(session.accessToken)
+      const api = createApi(session.nexusToken)
       await api.deleteWorkspace(slug)
       removeWorkspace(slug)
     } catch (error) {

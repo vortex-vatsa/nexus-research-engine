@@ -3,58 +3,53 @@
 import logging
 
 from fastapi import HTTPException, Request
+from jose import JWTError, jwt
 
+from app.core.config import get_allowed_emails, get_settings
 from app.core.schemas import AuthUser
 
 logger = logging.getLogger(__name__)
 
 
 async def get_current_user(request: Request) -> AuthUser:
-    """Get the current authenticated user from session or Bearer token.
+    """Get current user from JWT token in Authorization header.
 
-    Checks Authorization header for Bearer token first, then falls back to
-    session cookie. Raises 401 if user is not authenticated.
+    Validates JWT signature and email allowlist. Raises 401 if not authenticated.
 
     Args:
-        request: FastAPI request object with session or Authorization header
+        request: FastAPI request object with Authorization header
 
     Returns:
-        AuthUser with current user information
+        AuthUser with authenticated user information
 
     Raises:
-        HTTPException: 401 if not authenticated
+        HTTPException: 401 if not authenticated or token invalid
     """
-    # First try to get user from session (set by OAuth callback)
-    user_data = request.session.get("user")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
-    # If no session user, check for Bearer token in Authorization header
-    if not user_data:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            # For now, we use the token as a marker that the request came from
-            # an authenticated next-auth session. The actual validation happens
-            # because next-auth only generates tokens for authenticated users.
-            # A real implementation would verify the JWT signature here.
-            token = auth_header.split(" ")[1]
-            if token:
-                # In a real setup, you'd verify the JWT token here.
-                # For now, we accept it if it's present (frontend is responsible
-                # for only sending valid tokens from next-auth).
-                # This is a simplified approach - a production system would
-                # validate the JWT signature.
-                logger.debug(f"Bearer token received (token length: {len(token)})")
-
-    if not user_data:
-        raise HTTPException(
-            status_code=401,
-            detail="Not authenticated",
-        )
+    token = auth_header.split(" ")[1]
+    settings = get_settings()
 
     try:
-        return AuthUser(**user_data)
-    except Exception as e:
-        logger.error(f"Failed to parse user session: {e}")
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid user session",
+        payload = jwt.decode(
+            token, settings.SESSION_SECRET_KEY, algorithms=["HS256"]
         )
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Verify email is still in allowlist
+        if email not in get_allowed_emails(settings):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        return AuthUser(
+            google_id=payload.get("google_id", ""),
+            email=email,
+            name=payload.get("name", email.split("@")[0]),
+            avatar_url=payload.get("avatar_url", ""),
+        )
+    except JWTError:
+        logger.warning(f"Invalid JWT token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
