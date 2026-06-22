@@ -1197,7 +1197,7 @@ npm run build
 ---
 
 ### Task 2.3 — Blueprint Configurator
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(frontend): blueprint configurator with job polling and redirect`
 
 #### Must Implement
