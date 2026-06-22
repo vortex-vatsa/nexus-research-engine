@@ -37,15 +37,19 @@ def get_async_session_maker():
     )
 
 
-async def create_tables(engine):
+async def create_tables():
     """Create all tables in the database.
 
-    Args:
-        engine: SQLAlchemy async engine
+    Creates tables if they don't exist. Safe to call multiple times.
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created")
+    settings = get_settings()
+    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created/verified")
+    finally:
+        await engine.dispose()
 
 
 async def get_db(session_maker=None):

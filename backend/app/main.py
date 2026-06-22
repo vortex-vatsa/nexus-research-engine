@@ -23,14 +23,16 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Nexus Research Engine...")
 
+    # Create database tables
+    from app.services.database import create_tables
+    await create_tables()
+
     # Initialize LLM router on startup
     from app.providers.llm_router import llm_router
     try:
         await llm_router.initialize()
     except RuntimeError as e:
         logger.warning(f"LLM initialization failed: {e}")
-
-    # Database initialization and job healing will be added in Task 1.7
 
     logger.info("Startup complete")
     yield
