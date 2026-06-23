@@ -95,7 +95,9 @@ def create_app() -> FastAPI:
     # Mount routers
     app.include_router(auth_router, prefix="/auth", tags=["auth"])
     app.include_router(research.router, prefix="/research", tags=["research"])
-    app.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"])
+    app.include_router(
+        workspaces.router, prefix="/workspaces", tags=["workspaces"]
+    )
     app.include_router(notebook.router, prefix="/notebook", tags=["notebook"])
 
     # Health check endpoint
