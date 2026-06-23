@@ -75,7 +75,9 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
 
   return (
     <>
-      <DashboardCanvas payload={payload} />
+      <div style={{ marginRight: showNotebook ? "320px" : "0", transition: "margin-right 0.3s ease-out" }}>
+        <DashboardCanvas payload={payload} />
+      </div>
       <NotebookPanel workspaceSlug={slug} isOpen={showNotebook} />
     </>
   )

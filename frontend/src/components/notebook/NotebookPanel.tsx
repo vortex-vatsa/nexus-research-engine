@@ -114,9 +114,21 @@ export default function NotebookPanel({
 
   return (
     <div
-      className={`fixed right-0 top-0 h-screen w-[320px] bg-surface border-l border-border flex flex-col transition-transform duration-300 z-40 ${
-        isOpen ? "translate-x-0" : "translate-x-full"
-      }`}
+      style={{
+        position: "fixed",
+        right: 0,
+        top: "56px",
+        height: "calc(100vh - 56px)",
+        width: "320px",
+        backgroundColor: "#111118",
+        borderLeft: "1px solid #1e1e2e",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: 9999,
+        transform: isOpen ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.3s ease-out",
+        boxShadow: "-2px 0 10px rgba(0,0,0,0.3)"
+      }}
     >
       {/* Header */}
       <div className="p-4 border-b border-border">

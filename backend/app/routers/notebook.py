@@ -19,12 +19,14 @@ router = APIRouter()
 async def query_notebook(
     query: NotebookQuery,
     current_user: AuthUser = Depends(get_current_user),
+    llm_router=Depends(get_llm_router),
 ) -> NotebookResponse:
     """Query workspace knowledge base using RAG.
 
     Args:
         query: NotebookQuery with workspace_slug and question
         current_user: Authenticated user from session
+        llm_router: Initialized LLM router (injected)
 
     Returns:
         NotebookResponse with answer and sources
@@ -34,7 +36,6 @@ async def query_notebook(
     """
     try:
         # Initialize services
-        llm_router = get_llm_router()
         settings = get_settings()
         vector_store = VectorStoreService(settings)
         notebook_service = NotebookService(llm_router, vector_store)
