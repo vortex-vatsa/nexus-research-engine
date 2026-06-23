@@ -174,24 +174,29 @@ class SynthesizerAgent:
         format_pref = self.request.format_preference
         if format_pref == FormatPreference.COMPARISON:
             format_instructions = (
-                "COMPARISON format: 2 tables + 1 line chart + 1 list. "
-                "Tables for comparative analysis, chart for trends, "
-                "list for key insights."
+                "COMPARISON format: 2 components of type 'table' + "
+                "1 component of type 'chart' (with chart_style 'line') + "
+                "1 component of type 'list'. "
+                "Tables: comparative analysis. Chart: trends with chart_style='line'. "
+                "List: key insights."
             )
         elif format_pref == FormatPreference.SWOT:
             format_instructions = (
-                "SWOT format: 4 lists for Strengths, Weaknesses, "
-                "Opportunities, and Threats."
+                "SWOT format: 4 components of type 'list' only. "
+                "One list each for: Strengths, Weaknesses, Opportunities, Threats. "
+                "component_type MUST be 'list' for all 4."
             )
         elif format_pref == FormatPreference.TIMELINE:
             format_instructions = (
-                "TIMELINE format: 3 lists ordered chronologically. "
-                "Each entry: [date, event]. Sort by date ascending."
+                "TIMELINE format: 3 components of type 'list' only. "
+                "Each list ordered chronologically by date ascending. "
+                "component_type MUST be 'list' for all 3."
             )
         elif format_pref == FormatPreference.PROS_CONS:
             format_instructions = (
-                "PROS_CONS format: 2 lists (Pros, Cons) + 1 comparison table. "
-                "List format: [item, explanation]."
+                "PROS_CONS format: 2 components of type 'list' (Pros and Cons) + "
+                "1 component of type 'table' for detailed comparison. "
+                "component_type MUST be either 'list' or 'table', never anything else."
             )
         else:
             format_instructions = ""
@@ -272,6 +277,23 @@ class SynthesizerAgent:
 
         # Validate and create DashboardPayload
         try:
+            # Normalize component types (LLM sometimes generates invalid types)
+            def normalize_component_type(comp_type_str):
+                """Map invalid component types to valid ones."""
+                if not comp_type_str:
+                    return ComponentType.LIST
+                comp_type_str = str(comp_type_str).lower().strip()
+                # Map common LLM mistakes to valid types
+                type_map = {
+                    "line": ComponentType.CHART,
+                    "bar": ComponentType.CHART,
+                    "pie": ComponentType.CHART,
+                    "table": ComponentType.TABLE,
+                    "chart": ComponentType.CHART,
+                    "list": ComponentType.LIST,
+                }
+                return type_map.get(comp_type_str, ComponentType.LIST)
+
             payload = DashboardPayload(
                 topic_metadata=TopicMetadata(
                     topic=self.request.topic,
@@ -285,7 +307,7 @@ class SynthesizerAgent:
                 matrix_data=[
                     MatrixComponent(
                         section_title=comp.get("section_title", ""),
-                        component_type=ComponentType(
+                        component_type=normalize_component_type(
                             comp.get("component_type", "list")
                         ),
                         headers=comp.get("headers"),
