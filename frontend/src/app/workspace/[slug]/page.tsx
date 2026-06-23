@@ -6,6 +6,8 @@ import { useEffect, useState } from "react"
 import { createApi } from "@/lib/api"
 import type { DashboardPayload } from "@/lib/types"
 import DashboardCanvas from "@/components/dashboard/DashboardCanvas"
+import NotebookPanel from "@/components/notebook/NotebookPanel"
+import { useNotebook } from "@/lib/notebook-context"
 
 interface WorkspacePageProps {
   params: { slug: string }
@@ -14,6 +16,7 @@ interface WorkspacePageProps {
 export default function WorkspacePage({ params }: WorkspacePageProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const { showNotebook } = useNotebook()
   const [payload, setPayload] = useState<DashboardPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -69,5 +72,10 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
     )
   }
 
-  return <DashboardCanvas payload={payload} />
+  return (
+    <>
+      <DashboardCanvas payload={payload} />
+      <NotebookPanel workspaceSlug={params.slug} isOpen={showNotebook} />
+    </>
+  )
 }

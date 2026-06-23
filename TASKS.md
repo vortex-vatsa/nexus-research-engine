@@ -1245,7 +1245,7 @@ Not a generic form — feels like a mission briefing panel.
 ---
 
 ### Task 2.4 — Dashboard Canvas
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(frontend): dashboard canvas with all three spaces and visualizations`
 
 #### Must Implement
