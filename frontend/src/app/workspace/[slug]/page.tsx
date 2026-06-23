@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { createApi } from "@/lib/api"
 import type { DashboardPayload } from "@/lib/types"
 import DashboardCanvas from "@/components/dashboard/DashboardCanvas"
@@ -10,10 +10,11 @@ import NotebookPanel from "@/components/notebook/NotebookPanel"
 import { useNotebook } from "@/lib/notebook-context"
 
 interface WorkspacePageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export default function WorkspacePage({ params }: WorkspacePageProps) {
+  const { slug } = use(params)
   const { data: session } = useSession()
   const router = useRouter()
   const { showNotebook } = useNotebook()
@@ -31,7 +32,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
       try {
         setLoading(true)
         setError(null)
-        const data = await api.getWorkspace(params.slug)
+        const data = await api.getWorkspace(slug)
         setPayload(data)
       } catch (err) {
         setError("Workspace not found")
@@ -42,7 +43,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
     }
 
     fetchWorkspace()
-  }, [session, params.slug])
+  }, [session, slug])
 
   if (loading) {
     return (
@@ -75,7 +76,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   return (
     <>
       <DashboardCanvas payload={payload} />
-      <NotebookPanel workspaceSlug={params.slug} isOpen={showNotebook} />
+      <NotebookPanel workspaceSlug={slug} isOpen={showNotebook} />
     </>
   )
 }
