@@ -123,7 +123,7 @@ class SynthesizerAgent:
 
         # Step 5: Parse response
         logger.info(f"[{self.request_id}] Parsing LLM response...")
-        payload = self._parse_llm_response(raw_response)
+        payload = await self._parse_llm_response(raw_response)
 
         # Step 6: Add metadata
         payload.topic_metadata = TopicMetadata(
@@ -233,7 +233,7 @@ class SynthesizerAgent:
 
         return system, user
 
-    def _parse_llm_response(self, raw: str) -> DashboardPayload:
+    async def _parse_llm_response(self, raw: str) -> DashboardPayload:
         """Parse LLM response as DashboardPayload JSON.
 
         Handles markdown fences and attempts JSON repair on failure.
@@ -262,18 +262,22 @@ class SynthesizerAgent:
         except json.JSONDecodeError as e:
             logger.warning(
                 f"[{self.request_id}] Initial JSON parse failed: {e}. "
-                f"Attempting repair..."
+                f"Raw response: {raw[:300]}"
             )
-            # Try repair (but don't await it since we're not in async context here)
-            # For now, just raise with the original response for debugging
-            raise SynthesizerError(
-                "Failed to parse LLM response as JSON",
-                context={
-                    "error": str(e),
-                    "raw_preview": raw[:200],
-                    "request_id": self.request_id,
-                },
-            )
+            # Try to repair malformed JSON by common patterns
+            repaired = self._attempt_json_repair(raw)
+            try:
+                parsed = json.loads(repaired)
+                logger.info(f"[{self.request_id}] JSON repair succeeded")
+            except json.JSONDecodeError as e2:
+                raise SynthesizerError(
+                    "Failed to parse LLM response as JSON (repair failed)",
+                    context={
+                        "error": str(e2),
+                        "raw_preview": raw[:200],
+                        "request_id": self.request_id,
+                    },
+                )
 
         # Validate and create DashboardPayload
         try:
