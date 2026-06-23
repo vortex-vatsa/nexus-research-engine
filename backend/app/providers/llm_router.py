@@ -152,6 +152,7 @@ class GeminiProvider(BaseLLMProvider):
             )
             return response.text
         except Exception as e:
+            logger.error(f"Gemini error: {type(e).__name__}: {e}")
             raise ResearchAgentError(
                 "Gemini API request failed",
                 context={"error": str(e), "model": self.model},
@@ -168,7 +169,7 @@ class GroqProvider(BaseLLMProvider):
             settings: Application settings
         """
         self.settings = settings
-        self.model = "llama-3.1-70b-versatile"
+        self.model = "llama-3.1-8b-instant"
 
     async def complete(
         self, system_prompt: str, user_prompt: str, max_tokens: int = 4096
@@ -200,6 +201,7 @@ class GroqProvider(BaseLLMProvider):
             )
             return response.choices[0].message.content
         except Exception as e:
+            logger.error(f"Groq error: {type(e).__name__}: {e}")
             raise ResearchAgentError(
                 "Groq API request failed",
                 context={"error": str(e), "model": self.model},
@@ -250,7 +252,7 @@ class LLMRouter:
                 logger.info("LLM: Using Gemini Flash")
                 return
             except Exception as e:
-                logger.debug(f"Gemini unavailable: {e}")
+                logger.warning(f"Gemini unavailable: {type(e).__name__}: {e}")
 
         # Try Groq
         if self.settings.GROQ_API_KEY:
@@ -263,7 +265,7 @@ class LLMRouter:
                 logger.info("LLM: Using Groq Llama3")
                 return
             except Exception as e:
-                logger.debug(f"Groq unavailable: {e}")
+                logger.warning(f"Groq unavailable: {type(e).__name__}: {e}")
 
         raise RuntimeError(
             "No LLM provider available. "
