@@ -169,7 +169,7 @@ class GroqProvider(BaseLLMProvider):
             settings: Application settings
         """
         self.settings = settings
-        self.model = "llama-3.1-8b-instant"
+        self.model = "llama-3.3-70b-versatile"
 
     async def complete(
         self, system_prompt: str, user_prompt: str, max_tokens: int = 4096
@@ -220,65 +220,73 @@ class LLMRouter:
         self.settings = settings
         self._provider: BaseLLMProvider | None = None
         self._provider_name: str | None = None
+        self._groq_provider: BaseLLMProvider | None = None
+        self._ollama_provider: BaseLLMProvider | None = None
 
     async def initialize(self) -> None:
-        """Initialize and select the first available LLM provider.
+        """Initialize and select the primary LLM provider.
 
+        Stores references to all available providers for fallback.
         Tries providers in order: Ollama → Gemini → Groq
         Raises RuntimeError if no provider is available.
         """
+        self._groq_provider = None
+        self._ollama_provider = None
+
         # Try Ollama (2s timeout)
         if self.settings.OLLAMA_HOST:
             try:
                 async with asyncio.timeout(2):
                     provider = OllamaProvider(self.settings)
-                    # Test with a simple request
                     await provider.complete("You are helpful.", "Hello")
-                    self._provider = provider
-                    self._provider_name = "Ollama (local)"
-                    logger.info("LLM: Using Ollama (local)")
-                    return
+                    self._ollama_provider = provider
             except Exception as e:
                 logger.debug(f"Ollama unavailable: {e}")
 
-        # Try Gemini
+        # Try Gemini as primary
         if self.settings.GEMINI_API_KEY:
             try:
                 provider = GeminiProvider(self.settings)
-                # Test with a simple request
                 await provider.complete("You are helpful.", "Hello")
                 self._provider = provider
                 self._provider_name = "Gemini Flash"
-                logger.info("LLM: Using Gemini Flash")
+                logger.info("LLM: Primary = Gemini Flash")
+                # Store Groq as fallback
+                if self.settings.GROQ_API_KEY:
+                    try:
+                        self._groq_provider = GroqProvider(self.settings)
+                        logger.info("LLM: Fallback = Groq")
+                    except Exception as e:
+                        logger.debug(f"Groq fallback unavailable: {e}")
                 return
             except Exception as e:
                 logger.warning(f"Gemini unavailable: {type(e).__name__}: {e}")
 
-        # Try Groq
+        # Try Groq as primary if Gemini not available
         if self.settings.GROQ_API_KEY:
             try:
                 provider = GroqProvider(self.settings)
-                # Test with a simple request
                 await provider.complete("You are helpful.", "Hello")
                 self._provider = provider
                 self._provider_name = "Groq Llama3"
-                logger.info("LLM: Using Groq Llama3")
+                logger.info("LLM: Primary = Groq Llama3")
                 return
             except Exception as e:
                 logger.warning(f"Groq unavailable: {type(e).__name__}: {e}")
 
         raise RuntimeError(
             "No LLM provider available. "
-            "Configure OLLAMA_HOST, GEMINI_API_KEY, or GROQ_API_KEY."
+            "Configure GEMINI_API_KEY, GROQ_API_KEY, or OLLAMA_HOST."
         )
 
     async def complete(
         self, system_prompt: str, user_prompt: str, max_tokens: int = 4096
     ) -> str:
-        """Generate completion with selected provider.
+        """Generate completion with fallback provider logic.
 
-        Wraps the provider call in a 30-second timeout and applies
-        exponential backoff retry logic.
+        Tries the primary provider first, then falls back to secondary
+        providers (Groq, Ollama) if the primary fails. Applies exponential
+        backoff retry logic per provider.
 
         Args:
             system_prompt: System prompt
@@ -289,7 +297,7 @@ class LLMRouter:
             Generated text
 
         Raises:
-            ResearchAgentError: On timeout or provider failure
+            ResearchAgentError: If all providers fail
         """
         if not self._provider:
             raise ResearchAgentError(
@@ -297,19 +305,36 @@ class LLMRouter:
                 context={"call": "complete"},
             )
 
-        async def _call():
-            async with asyncio.timeout(90):
-                return await self._provider.complete(
-                    system_prompt, user_prompt, max_tokens
-                )
+        providers_to_try = [self._provider]
+        if not isinstance(self._provider, GroqProvider) and self._groq_provider:
+            providers_to_try.append(self._groq_provider)
+        if not isinstance(self._provider, OllamaProvider) and self._ollama_provider:
+            providers_to_try.append(self._ollama_provider)
 
-        try:
-            return await with_backoff(_call, retries=2, base_delay=1.0)
-        except asyncio.TimeoutError:
-            raise ResearchAgentError(
-                "LLM request timed out after 30 seconds",
-                context={"timeout_seconds": 30},
-            )
+        last_error = None
+        for provider in providers_to_try:
+            try:
+                async def _call():
+                    async with asyncio.timeout(90):
+                        return await provider.complete(
+                            system_prompt, user_prompt, max_tokens
+                        )
+
+                result = await with_backoff(_call, retries=2, base_delay=1.0)
+                return result
+            except Exception as e:
+                provider_name = type(provider).__name__
+                logger.warning(
+                    f"Provider {provider_name} failed: {type(e).__name__}: {e}. "
+                    f"Trying next..."
+                )
+                last_error = e
+                continue
+
+        raise ResearchAgentError(
+            f"All LLM providers failed. Last error: {str(last_error)}",
+            context={"last_error": str(last_error)},
+        )
 
     def get_provider_name(self) -> str:
         """Get the name of the current provider.
