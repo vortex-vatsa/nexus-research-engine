@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Clock, Grid2X2, Scale, Table2 } from "lucide-react"
-import { createApi } from "@/lib/api"
+import { createApi, ApiError } from "@/lib/api"
 import {
   ExtensivenesLevel,
   FormatPreference,
@@ -28,34 +28,42 @@ export function BlueprintForm() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [progressMsg, setProgressMsg] = useState("")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Poll for job status
   useEffect(() => {
     if (phase !== "running" || !jobId || !session?.nexusToken) return
 
-    const pollInterval = setInterval(async () => {
+    const nexusToken = session.nexusToken ?? ""
+    const api = createApi(nexusToken)
+
+    intervalRef.current = setInterval(async () => {
       try {
-        const api = createApi(session.nexusToken!)
         const status = await api.getJobStatus(jobId)
 
         setProgressMsg(status.progress_message)
 
         if (status.status === "complete" && status.workspace_slug) {
-          setPhase("complete")
+          if (intervalRef.current) clearInterval(intervalRef.current)
           router.push(`/workspace/${status.workspace_slug}`)
         } else if (status.status === "failed") {
+          if (intervalRef.current) clearInterval(intervalRef.current)
           setPhase("error")
-          setErrorMsg(status.error || "Research failed")
+          setErrorMsg(status.error ?? "Research failed")
         }
-      } catch (error) {
-        setPhase("error")
-        setErrorMsg(
-          error instanceof Error ? error.message : "Failed to check status"
-        )
+      } catch (e) {
+        console.error("Polling error:", e)
+        if (e instanceof ApiError && e.status === 401) {
+          if (intervalRef.current) clearInterval(intervalRef.current)
+          setPhase("error")
+          setErrorMsg("Session expired. Please sign in again.")
+        }
       }
     }, 2000)
 
-    return () => clearInterval(pollInterval)
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
   }, [phase, jobId, session?.nexusToken, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
