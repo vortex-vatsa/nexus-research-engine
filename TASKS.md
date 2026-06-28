@@ -1305,7 +1305,7 @@ class ChartErrorBoundary extends React.Component {
 ---
 
 ### Task 2.5 — Notebook Panel
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat(frontend): notebook panel with RAG Q&A and retry alert`
 
 #### Must Implement
@@ -1353,8 +1353,8 @@ Wire into workspace page: useState showNotebook, toggle from AppShell.
 ---
 
 ### Task 3.1 — End-to-End Integration Test
-**Status:** [ ] todo
-**Commit:** `fix: integration test fixes and edge case handling`
+**Status:** [x] done
+**Commit:** `fix: linting and type errors in frontend task 3.1 verification`
 
 #### Must Implement
 
