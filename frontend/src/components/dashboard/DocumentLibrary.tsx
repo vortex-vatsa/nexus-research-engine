@@ -2,7 +2,7 @@
 
 import { getDomain } from "@/lib/utils"
 import type { DocumentSource } from "@/lib/types"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, FileText } from "lucide-react"
 
 interface DocumentLibraryProps {
   sources: DocumentSource[]
@@ -15,7 +15,10 @@ export default function DocumentLibrary({ sources }: DocumentLibraryProps) {
         <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-4">
           Source Library
         </h3>
-        <div className="text-muted text-sm">No sources saved.</div>
+        <div className="flex flex-col items-center py-6 text-center">
+          <FileText className="w-8 h-8 text-muted mb-2 opacity-50" />
+          <p className="text-muted text-sm">No sources saved.</p>
+        </div>
       </div>
     )
   }

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, use } from "react"
+import { AlertCircle } from "lucide-react"
 import { createApi } from "@/lib/api"
 import type { DashboardPayload } from "@/lib/types"
 import DashboardCanvas from "@/components/dashboard/DashboardCanvas"
@@ -56,12 +57,16 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   if (error || !payload) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-        <div className="text-red-400">⚠️ {error || "Workspace not found"}</div>
+        <AlertCircle className="w-12 h-12 text-red-500 opacity-80" />
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-semibold text-primary">Workspace not found</h2>
+          <p className="text-sm text-muted">{error}</p>
+        </div>
         <button
           onClick={() => router.push("/")}
-          className="px-3 py-1.5 text-sm rounded bg-accent text-base hover:bg-accent/80"
+          className="px-4 py-2 text-sm font-medium rounded bg-accent text-white hover:bg-accent/80 transition-colors"
         >
-          Back
+          Back to Home
         </button>
       </div>
     )

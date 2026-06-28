@@ -6,11 +6,13 @@ import { useSession } from "next-auth/react"
 import { Clock, Grid2X2, Scale, Table2 } from "lucide-react"
 import { createApi, ApiError } from "@/lib/api"
 import { ExtensivenesLevel, FormatPreference } from "@/lib/types"
+import { useToast } from "@/hooks/useToast"
 
 export function BlueprintForm() {
   const router = useRouter()
   const { data: session } = useSession()
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { success, error: showError } = useToast()
 
   const [topic, setTopic] = useState("")
   const [extensiveness, setExtensiveness] = useState<ExtensivenesLevel>(
@@ -41,12 +43,14 @@ export function BlueprintForm() {
         if (status.status === "complete" && status.workspace_slug) {
           clearInterval(intervalRef.current!)
           intervalRef.current = null
+          success("Research complete! Workspace ready.")
           router.push(`/workspace/${status.workspace_slug}`)
         } else if (status.status === "failed") {
           clearInterval(intervalRef.current!)
           intervalRef.current = null
           setPhase("error")
           setErrorMsg(status.error ?? "Research failed")
+          showError(status.error ?? "Research failed")
         }
       } catch (e) {
         console.error("Polling error:", e)

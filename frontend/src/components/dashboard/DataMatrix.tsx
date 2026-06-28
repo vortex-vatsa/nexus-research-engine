@@ -4,6 +4,7 @@ import { ComponentType, type MatrixComponent } from "@/lib/types"
 import TableBlock from "./matrix-blocks/TableBlock"
 import ChartBlock from "./matrix-blocks/ChartBlock"
 import ListBlock from "./matrix-blocks/ListBlock"
+import { BarChart3 } from "lucide-react"
 import React from "react"
 
 interface DataMatrixProps {
@@ -31,8 +32,9 @@ class ChartErrorBoundary extends React.Component<
 export default function DataMatrix({ components }: DataMatrixProps) {
   if (!components || components.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted">
-        No structured data generated.
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <BarChart3 className="w-8 h-8 text-muted mb-3 opacity-50" />
+        <p className="text-muted text-sm">No structured data generated.</p>
       </div>
     )
   }

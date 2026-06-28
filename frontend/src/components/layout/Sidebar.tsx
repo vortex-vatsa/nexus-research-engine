@@ -3,16 +3,18 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Trash2, Plus } from "lucide-react"
+import { Trash2, Plus, BookOpen } from "lucide-react"
 import { useWorkspaceStore } from "@/store/workspace"
 import { createApi } from "@/lib/api"
 import { formatDate } from "@/lib/utils"
+import { useToast } from "@/hooks/useToast"
 
 export function Sidebar() {
   const router = useRouter()
   const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(true)
   const { workspaces, activeSlug, fetchWorkspaces, removeWorkspace } = useWorkspaceStore()
+  const { success, error: showError } = useToast()
 
   useEffect(() => {
     if (session?.nexusToken) {
@@ -26,8 +28,10 @@ export function Sidebar() {
       const api = createApi(session.nexusToken)
       await api.deleteWorkspace(slug)
       removeWorkspace(slug)
+      success("Workspace deleted.")
     } catch (error) {
       console.error("Failed to delete workspace:", error)
+      showError("Failed to delete workspace")
     }
   }
 
@@ -47,9 +51,10 @@ export function Sidebar() {
         {isLoading ? (
           <div className="p-4 text-center text-muted text-sm">Loading workspaces...</div>
         ) : workspaces.length === 0 ? (
-          <div className="p-4 text-center text-muted text-sm">
-            <p>No workspaces yet.</p>
-            <p className="mt-2">Start your first research.</p>
+          <div className="flex flex-col items-center justify-center p-4 pt-12 text-center">
+            <BookOpen className="w-8 h-8 text-muted mb-3 opacity-50" />
+            <p className="text-muted text-sm">No workspaces yet.</p>
+            <p className="text-muted text-xs mt-1">Start your first research.</p>
           </div>
         ) : (
           <div className="space-y-1 p-2">
