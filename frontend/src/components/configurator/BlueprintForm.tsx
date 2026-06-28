@@ -5,15 +5,12 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Clock, Grid2X2, Scale, Table2 } from "lucide-react"
 import { createApi, ApiError } from "@/lib/api"
-import {
-  ExtensivenesLevel,
-  FormatPreference,
-  type ResearchJobStatus,
-} from "@/lib/types"
+import { ExtensivenesLevel, FormatPreference } from "@/lib/types"
 
 export function BlueprintForm() {
   const router = useRouter()
   const { data: session } = useSession()
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const [topic, setTopic] = useState("")
   const [extensiveness, setExtensiveness] = useState<ExtensivenesLevel>(
@@ -22,54 +19,50 @@ export function BlueprintForm() {
   const [formatPref, setFormatPref] = useState<FormatPreference>(
     FormatPreference.COMPARISON
   )
-  const [phase, setPhase] = useState<"idle" | "running" | "complete" | "error">(
-    "idle"
-  )
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [phase, setPhase] = useState<"idle" | "running" | "error">("idle")
   const [progressMsg, setProgressMsg] = useState("")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Poll for job status
   useEffect(() => {
-    if (phase !== "running" || !jobId || !session?.nexusToken) return
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
 
-    const nexusToken = session.nexusToken ?? ""
-    const api = createApi(nexusToken)
+  const startPolling = (jobId: string, token: string) => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    const api = createApi(token)
 
     intervalRef.current = setInterval(async () => {
       try {
         const status = await api.getJobStatus(jobId)
-
         setProgressMsg(status.progress_message)
 
         if (status.status === "complete" && status.workspace_slug) {
-          if (intervalRef.current) clearInterval(intervalRef.current)
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
           router.push(`/workspace/${status.workspace_slug}`)
         } else if (status.status === "failed") {
-          if (intervalRef.current) clearInterval(intervalRef.current)
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
           setPhase("error")
           setErrorMsg(status.error ?? "Research failed")
         }
       } catch (e) {
         console.error("Polling error:", e)
         if (e instanceof ApiError && e.status === 401) {
-          if (intervalRef.current) clearInterval(intervalRef.current)
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
           setPhase("error")
           setErrorMsg("Session expired. Please sign in again.")
         }
       }
     }, 2000)
+  }
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [phase, jobId, session?.nexusToken, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Validation
     if (topic.trim().length < 3) {
       setErrorMsg("Topic must be at least 3 characters")
       return
@@ -85,14 +78,15 @@ export function BlueprintForm() {
       setPhase("running")
       setProgressMsg("Starting research...")
 
-      const api = createApi(session.nexusToken)
+      const token = session.nexusToken
+      const api = createApi(token)
       const result = await api.runResearch({
         topic: topic.trim(),
         extensiveness,
         format_preference: formatPref,
       })
 
-      setJobId(result.job_id)
+      startPolling(result.job_id, token)
     } catch (error) {
       setPhase("error")
       setErrorMsg(
@@ -229,7 +223,6 @@ export function BlueprintForm() {
               onClick={() => {
                 setPhase("idle")
                 setErrorMsg(null)
-                setJobId(null)
               }}
               className="mt-2 text-xs text-red-400 hover:text-red-300 underline"
             >
