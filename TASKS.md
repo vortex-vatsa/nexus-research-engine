@@ -1418,7 +1418,7 @@ Toasts:
 ---
 
 ### Task 3.3 — Makefile, README, Dockerfile
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `docs: Makefile, README, and Dockerfile`
 
 #### Must Implement
