@@ -1383,7 +1383,7 @@ Create **KNOWN_ISSUES.md** at repo root documenting any limitations.
 ---
 
 ### Task 3.2 — Empty States and Error Handling
-**Status:** [ ] todo
+**Status:** [x] done
 **Commit:** `feat: empty states, error handling, and toast notifications`
 
 #### Must Implement
