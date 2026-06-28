@@ -118,12 +118,12 @@ class ResearchOrchestrator:
         self.vector_store = VectorStoreService(settings)
 
     async def run_research(
-        self, request: ResearchRequest, user_email: str, db: AsyncSession
+        self, request: ResearchRequest, user_email: str, db: AsyncSession, job_id: str | None = None
     ) -> str:
         """Execute the full research pipeline.
 
         Steps:
-        1. Create job record in database
+        1. Create job record in database (if not pre-created)
         2. Generate search queries
         3. Search the web
         4. Synthesize findings
@@ -134,6 +134,7 @@ class ResearchOrchestrator:
             request: ResearchRequest with topic and preferences
             user_email: User email for workspace isolation
             db: AsyncSession for database operations
+            job_id: Pre-generated job ID, or None to generate one
 
         Returns:
             Job ID for tracking
@@ -141,7 +142,8 @@ class ResearchOrchestrator:
         Raises:
             ResearchAgentError: If any step fails
         """
-        job_id = str(uuid4())
+        if job_id is None:
+            job_id = str(uuid4())
         request_id = job_id[:8]
         email_slug = email_to_slug(user_email)
 
@@ -160,21 +162,10 @@ class ResearchOrchestrator:
             # Step 1: Create workspace directory
             await workspace_repo.ensure_workspace_dir(email_slug, slug)
 
-            # Step 2: Insert job record
+            # Step 2: Insert job record (skip if already created by endpoint)
             logger.info(
-                f"[{request_id}] Creating job for {user_email}: {request.topic}"
+                f"[{request_id}] Starting: {request.topic}"
             )
-            job = Job(
-                id=job_id,
-                user_email=user_email,
-                status=JobStatus.PENDING.value,
-                progress_message="",
-                workspace_slug=None,
-                error=None,
-            )
-            db.add(job)
-            await db.commit()
-            logger.info(f"[{request_id}] Starting: {request.topic}")
 
             # Step 3: Run researcher agent
             await self._update_job_status(
