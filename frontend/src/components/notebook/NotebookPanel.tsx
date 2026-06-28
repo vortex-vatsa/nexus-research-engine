@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { createApi } from "@/lib/api"
-import type { NotebookQuery, NotebookResponse, RetrievedChunk } from "@/lib/types"
+import type { NotebookQuery, RetrievedChunk } from "@/lib/types"
 import ChatThread from "./ChatThread"
 import QueryInput from "./QueryInput"
 import RetryAlert from "./RetryAlert"
@@ -51,7 +51,7 @@ export default function NotebookPanel({
     setLoading(true)
 
     try {
-      const token = (session as any).nexusToken || ""
+      const token = (session as { nexusToken?: string }).nexusToken || ""
       const api = createApi(token)
 
       const response = await api.queryNotebook({
@@ -68,7 +68,7 @@ export default function NotebookPanel({
         needsWebSearch: response.needs_web_search,
       }
       setMessages((prev) => [...prev, assistantMsg])
-    } catch (error) {
+    } catch {
       const errorMsg: Message = {
         id: `error-${Date.now()}`,
         role: "assistant",
@@ -86,7 +86,7 @@ export default function NotebookPanel({
 
     setLoading(true)
     try {
-      const token = (session as any).nexusToken || ""
+      const token = (session as { nexusToken?: string }).nexusToken || ""
       const api = createApi(token)
 
       const response = await api.queryNotebook({

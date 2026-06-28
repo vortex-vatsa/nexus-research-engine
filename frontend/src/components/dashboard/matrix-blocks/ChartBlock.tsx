@@ -69,7 +69,7 @@ export default function ChartBlock({ data, style }: ChartBlockProps) {
   }
 
   if (chartStyle === ChartStyle.PIE) {
-    const pieData = data.map((item, idx) => ({
+    const pieData = data.map((item) => ({
       name: String(item.name),
       value: Number(item.value) || 0,
     }))

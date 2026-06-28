@@ -25,23 +25,23 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   useEffect(() => {
     if (!session?.user?.email) return
 
-    const token = (session as any).nexusToken || ""
+    const token = (session as { nexusToken?: string }).nexusToken || ""
     const api = createApi(token)
 
     const fetchWorkspace = async () => {
       try {
-        setLoading(true)
-        setError(null)
         const data = await api.getWorkspace(slug)
         setPayload(data)
-      } catch (err) {
+        setError(null)
+      } catch {
         setError("Workspace not found")
-        console.error("Failed to load workspace:", err)
       } finally {
         setLoading(false)
       }
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true)
     fetchWorkspace()
   }, [session, slug])
 

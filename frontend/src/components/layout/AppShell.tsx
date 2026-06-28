@@ -7,13 +7,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 interface AppShellProps {
   children: React.ReactNode
-  showNotebook?: boolean
   onToggleNotebook?: () => void
 }
 
 export function AppShell({
   children,
-  showNotebook = false,
   onToggleNotebook,
 }: AppShellProps) {
   const { data: session } = useSession()

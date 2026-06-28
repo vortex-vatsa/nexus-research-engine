@@ -15,10 +15,7 @@ export function LayoutClient({ children }: LayoutClientProps) {
   return (
     <SessionProvider>
       <NotebookContext.Provider value={{ showNotebook, setShowNotebook }}>
-        <ProtectedLayout
-          showNotebook={showNotebook}
-          onToggleNotebook={() => setShowNotebook(!showNotebook)}
-        >
+        <ProtectedLayout onToggleNotebook={() => setShowNotebook(!showNotebook)}>
           {children}
         </ProtectedLayout>
       </NotebookContext.Provider>

@@ -7,13 +7,11 @@ import { AppShell } from "@/components/layout/AppShell"
 
 interface ProtectedLayoutProps {
   children: React.ReactNode
-  showNotebook: boolean
   onToggleNotebook: () => void
 }
 
 export function ProtectedLayout({
   children,
-  showNotebook,
   onToggleNotebook,
 }: ProtectedLayoutProps) {
   const { data: session, status } = useSession()
@@ -25,6 +23,7 @@ export function ProtectedLayout({
   const isAuthRoute = pathname.startsWith("/api/auth")
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 
@@ -60,10 +59,7 @@ export function ProtectedLayout({
   // If authenticated, show AppShell with children
   if (status === "authenticated" && session) {
     return (
-      <AppShell
-        showNotebook={showNotebook}
-        onToggleNotebook={onToggleNotebook}
-      >
+      <AppShell onToggleNotebook={onToggleNotebook}>
         {children}
       </AppShell>
     )
